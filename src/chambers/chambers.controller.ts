@@ -9,7 +9,7 @@ export class ChambersController {
   constructor(private readonly chambersService: ChambersService) {}
 
   @Get('/get')
-  findAll(): IChamber[] {
+  findAll(): Promise<IChamber[]> {
     return this.chambersService.findAll();
   }
 
