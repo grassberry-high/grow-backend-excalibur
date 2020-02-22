@@ -14,7 +14,7 @@ export class ChambersService {
     this.chambers.push(chamber);
   }
 
-  async findAll(): Promise<IChamber[]> {
-    return this.chamberModel.find().exec();;
+  async findAll(filter, options): Promise<IChamber[]> {
+    return this.chamberModel.find(filter, options).exec();
   }
 }
