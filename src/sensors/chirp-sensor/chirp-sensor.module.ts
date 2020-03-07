@@ -1,7 +1,12 @@
 import { Module } from '@nestjs/common';
-import { ChirpSensorService } from './chirp-sensor.service';
+import { ChirpSensor } from './chirp-sensor';
+import ChirpSensorMock from './mocks/chirp-sensor.mock';
+
+
+const chirpFactory = { provide: ChirpSensor, useFactory: () => process.env.SIMULATION === 'true' ? ChirpSensorMock :  ChirpSensor };
 
 @Module({
-  providers: [ChirpSensorService]
+  providers: [chirpFactory],
+  exports: [chirpFactory]
 })
 export class ChirpSensorModule {}

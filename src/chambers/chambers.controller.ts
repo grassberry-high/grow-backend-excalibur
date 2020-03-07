@@ -14,10 +14,10 @@ export class ChambersController {
     return this.chambersService.findAll(chamberQuery.filter, chamberQuery.options);
   }
 
-  @Post()
-  async upsert(@Body('chamber') upsertChamberDto: UpsertChamberDto) {
-    console.log('upsertChamberDto', upsertChamberDto);
-    this.chambersService.create(upsertChamberDto);
-  }
+  // @Post()
+  // async upsert(@Body('chamber') upsertChamberDto: UpsertChamberDto) {
+  //   console.log('upsertChamberDto', upsertChamberDto);
+  //   this.chambersService.create(upsertChamberDto);
+  // }
 
 }

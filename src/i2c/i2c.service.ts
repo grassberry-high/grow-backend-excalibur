@@ -13,14 +13,14 @@ import * as os from 'os';
 
 let i2c;
 let i2c1;
-import {I2cMock} from './mocks/i2c.mock';
+import {I2cServiceMock} from './mocks/i2c.mock';
 
 if (process.env.USE_I2C_MOCK === 'true') {
   debugI2c('Not using I2C: ENV USE_I2C_MOCK set', os.arch(), 'i2c', i2c);
-  i2c = new I2cMock();
+  i2c = new I2cServiceMock();
 } else if (os.arch() !== 'arm') {
   debugI2c('Not using I2C', os.arch());
-  i2c = new I2cMock();
+  i2c = new I2cServiceMock();
 } else { // arm === raspberrypi
   i2c = require('i2c-bus');
   debugI2c('Using I2C', os.arch(), inspect(i2c));

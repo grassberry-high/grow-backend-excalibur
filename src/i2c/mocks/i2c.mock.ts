@@ -11,7 +11,7 @@
 const TxLVL = 0x08 << 3;
 const RxLVL = 0x09 << 3;
 
-export class I2cMock {
+export class I2cServiceMock {
   open(bus, callback) {
     bus = {
       scan(callback) {

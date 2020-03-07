@@ -1,10 +1,9 @@
-import { Injectable } from '@nestjs/common';
 import chalk = require('chalk');
 import debug from 'debug';
-const debugSensorChrip = debug('sensor:Water');
 
 import * as moment  from 'moment';
-import {Sensor} from '../sensor';
+import Sensor from '../sensor';
+import ChirpSensorMock from './mocks/chirp-sensor.mock';
 
 const CMD_READ_WATER_LEVEL = 0x00; // 2bytes
 const STATUS_DRY = 0;
@@ -15,9 +14,19 @@ const WATERLEVELS = ['Dry', 'Moist', 'Wet'];
 // CMD_READ_TEMP = 0xaa
 // CMD_START_CONVERT = 0xee
 
-@Injectable()
-export class ChirpSensorService extends Sensor{
 
+export class ChirpSensor extends Sensor{
+  debugSensorChrip;
+
+  constructor(options) {
+    super(options);
+    this.debugSensorChrip = debug('sensor:Water');
+    this.debugSensorChrip.enabled = true;
+  }
+
+  initChirp(options) {
+    this.debugSensorChrip(`Water sensor ${options._id}`);
+  }
 }
 
 // /**

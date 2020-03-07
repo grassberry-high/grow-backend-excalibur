@@ -12,6 +12,7 @@ import { HelpersModule } from '../helpers/helpers.module';
 @Module({
   imports: [MongooseModule.forFeature([{ name: 'System', schema: SystemSchema }]), ApiModule, HelpersModule],
   providers: [SystemUpdateService, SystemReadService, SystemSupportService, ShellService],
-  controllers: [SystemController]
+  controllers: [SystemController],
+  exports: [SystemReadService]
 })
 export class SystemModule {}
