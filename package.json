@@ -19,15 +19,29 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json"
   },
+  "husky": {
+    "hooks": {
+      "pre-commit": "lint-staged",
+      "pre-push": "npm test"
+    }
+  },
+  "lint-staged": {
+    "{src,apps,libs,test}/**/*.ts": [
+      "eslint --fix"
+    ]
+  },
   "dependencies": {
     "@nestjs/common": "^6.10.14",
     "@nestjs/core": "^6.10.14",
     "@nestjs/platform-express": "^6.10.14",
+    "@nestjs/swagger": "^4.3.2",
+    "@typegoose/typegoose": "^6.4.0",
     "@types/mongoose": "^5.7.6",
     "nestjs-typegoose": "^7.1.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.0",
-    "rxjs": "^6.5.4"
+    "rxjs": "^6.5.4",
+    "swagger-ui-express": "^4.1.3"
   },
   "devDependencies": {
     "@nestjs/cli": "^6.13.2",
@@ -42,7 +56,9 @@
     "eslint": "^6.7.2",
     "eslint-config-prettier": "^6.7.0",
     "eslint-plugin-import": "^2.19.1",
+    "husky": "^4.2.3",
     "jest": "^24.9.0",
+    "lint-staged": "^10.0.8",
     "prettier": "^1.18.2",
     "supertest": "^4.0.2",
     "ts-jest": "25.2.0",
