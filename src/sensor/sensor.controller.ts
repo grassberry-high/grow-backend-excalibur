@@ -19,9 +19,4 @@ export class SensorController {
     addSensor(@Body() sensor: Sensor) {
         return this.sensorService.addSensor(sensor)
     }
-
-    @Get('/seed')
-    seedMany() {
-        return this.sensorService.seedSensors();
-    }
 }
