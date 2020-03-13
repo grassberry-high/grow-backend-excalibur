@@ -4,13 +4,6 @@ import { Sensor, Tech } from './sensor.model';
 import sensorDummies from './sensor.dummies';
 import { getModelToken } from 'nestjs-typegoose';
 
-
-class SensorMock {
-  private find() {
-    return sensorDummies;
-  }
-}
-
 describe('SensorService', () => {
   let service: SensorService;
   const newSensor: Sensor = {
@@ -31,17 +24,18 @@ describe('SensorService', () => {
     ],
   };
 
-  beforeEach(async () => {
+  class SensorMock {
+    async find() {
+      return sensorDummies;
+    }
+  }
 
+  beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         SensorService,
         {
           provide: getModelToken('Sensor'),
-          useValue: Sensor,
-        },
-        {
-          provide: Sensor,
           useClass: SensorMock,
         },
       ],
@@ -61,8 +55,8 @@ describe('SensorService', () => {
     expect(sensors).toHaveLength(1);
   });
 
-  it('getSensorsRaw return raw values of sensors', () => {
-    const sensors = service.getSensorsRaw();
+  it('getSensorsRaw return raw values of sensors', async () => {
+    const sensors = await service.getSensorsRaw();
     expect(sensors).toEqual(sensorDummies);
   });
 });

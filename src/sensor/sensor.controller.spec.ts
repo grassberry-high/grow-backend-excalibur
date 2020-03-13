@@ -5,10 +5,20 @@ import { SensorService } from './sensor.service';
 describe('Sensor Controller', () => {
   let controller: SensorController;
 
+  class SensorServiceMock {
+    private getSensorsRaw() {
+      return {};
+    }
+
+    private addSensor(): void {
+      return;
+    }
+  }
+
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SensorController],
-      providers: [SensorService]
+      providers: [{ provide: SensorService, useClass: SensorServiceMock }],
     }).compile();
 
     controller = module.get<SensorController>(SensorController);
