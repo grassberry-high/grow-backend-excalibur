@@ -1,5 +1,5 @@
-import { modelOptions, prop } from '@typegoose/typegoose';
-
+import "mongoose";
+import { modelOptions, prop, arrayProp } from '@typegoose/typegoose';
 class Detector {
   @prop({ required: true })
   label!: string;
@@ -11,14 +11,14 @@ class Detector {
   unit!: string;
 }
 
-enum Tech {
-  I2C,
-  BLE,
+export enum Tech {
+  I2C = 'i2c',
+  BLE = 'ble',
 }
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Sensor {
-  @prop({ required: true })
+  @prop({ required: true, enum: Tech, lowercase: true})
   technology!: Tech; // I2C or BLE
 
   @prop({ required: true })
@@ -48,6 +48,6 @@ export class Sensor {
   })
   uuid?: string; // BLE sensor
 
-  @prop({ required: true })
-  detectors!: [Detector];
+  @arrayProp({ required: true, items: Detector })
+  detectors!: Detector[];
 }
