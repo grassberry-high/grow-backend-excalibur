@@ -1,5 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { SensorController } from './sensor.controller';
+import { SensorService } from './sensor.service';
 
 describe('Sensor Controller', () => {
   let controller: SensorController;
@@ -7,6 +8,7 @@ describe('Sensor Controller', () => {
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [SensorController],
+      providers: [SensorService]
     }).compile();
 
     controller = module.get<SensorController>(SensorController);

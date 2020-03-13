@@ -4,6 +4,7 @@ import { AppService } from './app.service';
 import { ChambersModule } from './chambers/chambers.module';
 import {TypegooseModule} from "nestjs-typegoose";
 import { SensorModule } from './sensor/sensor.module';
+import { MockSensor } from './mock-sensor';
 
 @Module({
   imports: [
@@ -12,6 +13,6 @@ import { SensorModule } from './sensor/sensor.module';
     SensorModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, MockSensor],
 })
 export class AppModule {}
