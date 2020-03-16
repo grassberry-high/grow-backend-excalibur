@@ -86,7 +86,7 @@ export class I2cService {
     }
   };
 
-  adressInActiveDevices(address: string) {
+  adressInActiveDevices(address: number) {
     return this.activeDevices.indexOf(address) !== -1;
   };
 
