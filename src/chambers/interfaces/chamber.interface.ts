@@ -1,11 +1,13 @@
 // TODO: not very DRY
+import { Document } from 'mongoose';
+
 export interface IStrain {
   name: string;
   daysToHarvest: number;
   leafly: string;
 }
 
-export interface IChamber {
+export interface IChamber extends Document {
   name: string;
   cycle: string;
   displays: string[];
