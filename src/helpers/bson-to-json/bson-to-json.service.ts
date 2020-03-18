@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import _ from 'lodash';
+import * as _ from "lodash";
 import {Types} from 'mongoose';
 import ObjectId = Types.ObjectId;
 import { ComparisonService } from '../comparison/comparison.service';

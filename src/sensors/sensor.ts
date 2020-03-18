@@ -1,28 +1,33 @@
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectModel } from 'nestjs-typegoose';
 import { Model, Types } from 'mongoose';
 
 const HISTORY_LENGTH = 30;
 const ONE_SECOND_IN_MILLISECONDS = 1000;
 const ONE_MINUTE_IN_MILLISECONDS = 60 * ONE_SECOND_IN_MILLISECONDS;
-// const ONE_HOUR_IN_MILLISECONDS = 60 * ONE_MINUTE_IN_MILLISECONDS;
-// const STATISTIC_INTERVALL = HISTORY_LENGTH * 60 * 1000; // max time unit is hours
-//
-// import {inspect} from 'util';
+const ONE_HOUR_IN_MILLISECONDS = 60 * ONE_MINUTE_IN_MILLISECONDS;
+const STATISTIC_INTERVALL = HISTORY_LENGTH * 60 * 1000; // max time unit is hours
+
+import { inspect } from 'util';
 import debug from 'debug';
+import { Sensor as SensorModel, Detector, Tech } from './sensors.model';
 
 const debugSensorFilter = debug('sensor:filter');
 // const debugSensorSwitch = debug('sensor:switch');
-// const debugSensorBroadcast = debug('sensor:broadcast');
-// const debugSensorSwitchVerbose = debug('sensor:switch:verbose');
-// const debugSensorSwitchBlockers = debug('sensor:switch:blockers');
-//
-// import {orderBy, sortBy} from 'lodash';
-// import * as moment from 'moment';
+const debugSensorBroadcast = debug('sensor:broadcast');
+const debugSensorSwitchVerbose = debug('sensor:switch:verbose');
+const debugSensorSwitchBlockers = debug('sensor:switch:blockers');
+
+import { orderBy, sortBy } from 'lodash';
+import * as moment from 'moment';
 // import  * as fs from 'fs';
-// import KalmanFilter from 'kalmanjs';
+import KalmanFilter from 'kalmanjs';
 //
 // import { async } from 'rxjs/internal/scheduler/async';
 import { IDetector } from './interfaces/detector.interface';
+import { I2cService } from '../i2c/i2c.service';
+import { ReturnModelType } from '@typegoose/typegoose';
+import { SensorReading, Unit } from '../data-logger/sensor-reading';
+import { Injectable } from '@nestjs/common';
 
 //const ObjectId = Types.ObjectId;
 //const {SensorDataModel} = require('../data-logger/sensor-data.model');
@@ -37,7 +42,6 @@ import { IDetector } from './interfaces/detector.interface';
 // import DataLogger = require('../data-logger/data-logger.class.js');
 //
 // const dataLogger = new DataLogger();
-// import {getI2cBus} from '../i2c/i2c.js';
 
 /**
  * Basic sensor class
@@ -46,65 +50,62 @@ export default class Sensor {
   _id: string;
   model: string;
   detectors: IDetector[];
-  technology: string;
+  technology: Tech;
+  i2c1: object;
+  kalmanFilter: KalmanFilter;
+  address: number;
   sensorReadIntervall: number;
   sensorPushIntervall: number;
   sensorWriteIntervall: number;
-  timeUnit: string;
+  timeUnit: moment.unitOfTime.DurationConstructor;
   modes: any;
 
-  constructor(options:any = {}) {
+  constructor(
+    private readonly i2cService: I2cService,
+    @InjectModel(SensorModel)
+    private readonly sensorModel: ReturnModelType<typeof SensorModel>,
+    @InjectModel(SensorReading)
+    private readonly sensorReadingModel: ReturnModelType<typeof SensorReading>,
+  ) {
     return;
   }
 
-  getSensor() {
-    return this;
-  }
+  async init(
+    id: string,
+    model: string,
+    technology: Tech,
+    detectors: IDetector[],
+    modes: any,
+    timeUnit?: Unit
+  ) {
+    this._id = id;
+    this.model = model;
+    this.detectors = detectors;
+    
+    this.technology = technology;
 
-  async init (options) {
-    // this.sensorSaveValueToDb = dataLogger.createSensorData;
-    // const that = this;
-    this._id = options._id || (() => {
-      throw new Error('Id is required');
-    })();
-    this.model = options.model || (() => {
-      throw new Error('Model is required');
-    })();
-    if ((!options.detectors) || (options.detectors.length === 0)) {
-      throw new Error('At least one detector is required');
-    }
-    this.detectors = options.detectors || [];
-    this.technology = options.technology;
+    if (this.technology === 'i2c') this.i2c1 = this.i2cService.getI2cBus();
 
-    // if (options.technology === 'i2c') {
-    //   this.i2c1 = getI2cBus();
-    //   this.address = options.address || (() => {
-    //     throw new Error('Address is required');
-    //   })();
-    // }
-    //
     this.sensorReadIntervall = 1000; // read sensor each s
     this.sensorPushIntervall = 5000; // push sensor each 5s
     this.sensorWriteIntervall = 5000; // write sensor each 5s
-    this.timeUnit = 'seconds';
-    debugSensorFilter(options.modes);
-    this.modes = options.modes || {adjustValues: 5};
-    // if (this.modes.kalman != null) {
-    //   this.kalmanFilter = new KalmanFilter(this.modes.kalman); // R internal variation, Q expected variation through noise
-    // }
-    //
-    //
-    this.detectors.forEach( async (detector, next) => {
-        detector.history = [];
-        detector.shortBuffer = [];
-        detector.currentValue = null;
-        // TODO: implement
-        // const history = await this.readSensorHistory(detector)
-        // detector.history = history || [];
+    this.timeUnit = timeUnit || 'seconds'; 
+    debugSensorFilter(modes);
+    this.modes = modes || { adjustValues: 5 };
 
-      });
-      // this.buildStatistic();
-      return;
+    if (this.modes.kalman != null) {
+      this.kalmanFilter = new KalmanFilter(this.modes.kalman); // R internal variation, Q expected variation through noise
+    }
+
+    this.detectors.forEach(async detector => {
+      detector.history = [];
+      detector.shortBuffer = [];
+      detector.currentValue = null;
+      const history = await this.readSensorHistory(detector);
+      detector.history = history || [];
+    });
+    // this.buildStatistic();
+    return;
   }
 
   // // --------------------------- Statistic & Clean up --------------------------------------
@@ -220,106 +221,117 @@ export default class Sensor {
   // /**
   //  * Process the sensor value
   //  */
-  async processSensorValue(detector: object, newValue: number) {
-    // const self = this;
-    // if (isNaN(newValue)) {
-    //   return callback();
-    // }
-    // if (this.modes.adjustValues != null) {
-    //   newValue = this.adjustValue(detector, newValue);
-    // } else if (this.kalmanFilter != null) {
-    //   const historyY = detector.history.map((value) => value.y);
-    //   historyY.push(newValue);
-    //   debugSensorFilter(`Before Kalman: ${newValue}`);
-    //   if (process.env.LOG_KALMAN === 'true') {
-    //     fs.appendFile(process.env.APP_PATH + `/logs/kalman_${detector.name}.csv`, `${newValue};`, 'utf-8', () => {
-    //     });
-    //   }
-    //   newValue = historyY.map((value) => self.kalmanFilter.filter(value)).pop();
-    //   debugSensorFilter(`After Kalman: ${newValue}`);
-    //   if (process.env.LOG_KALMAN === 'true') {
-    //     fs.appendFile(process.env.APP_PATH + `/logs/kalman_${detector.name}.csv`, `${newValue}\n`, 'utf-8', () => {
-    //     });
-    //   }
-    // }
-    //
-    // if (detector.round === true) {
-    //   newValue = Math.round(newValue);
-    // }
-    // detector.currentValue = {x: moment().toDate(), y: newValue}; // .startOf('minute')
-    // this.applyRules(detector);
-    //
-    // async.parallel({
-    //     sensorPush(next) {
-    //       if (!self.checkPush(detector)) {
-    //         return next();
-    //       }
-    //       detector.history.push(detector.currentValue);
-    //       if (detector.history.length > HISTORY_LENGTH) {
-    //         detector.history.shift();
-    //       }
-    //       detector.history = orderBy(detector.history, 'x');
-    //       self.broadcastSensorHistory();
-    //       return next();
-    //     },
-    //     sensorWrite(next) {
-    //       if (!self.checkWrite(detector)) {
-    //         return next();
-    //       }
-    //       self.sensorSaveValueToDb(self._id, detector, next);
-    //     },
-    //   },
-    //   callback);
-  }
+  // async processSensorValue(detector: object, newValue: number) {
+  // const self = this;
+  // if (isNaN(newValue)) {
+  //   return callback();
+  // }
+  // if (this.modes.adjustValues != null) {
+  //   newValue = this.adjustValue(detector, newValue);
+  // } else if (this.kalmanFilter != null) {
+  //   const historyY = detector.history.map((value) => value.y);
+  //   historyY.push(newValue);
+  //   debugSensorFilter(`Before Kalman: ${newValue}`);
+  //   if (process.env.LOG_KALMAN === 'true') {
+  //     fs.appendFile(process.env.APP_PATH + `/logs/kalman_${detector.name}.csv`, `${newValue};`, 'utf-8', () => {
+  //     });
+  //   }
+  //   newValue = historyY.map((value) => self.kalmanFilter.filter(value)).pop();
+  //   debugSensorFilter(`After Kalman: ${newValue}`);
+  //   if (process.env.LOG_KALMAN === 'true') {
+  //     fs.appendFile(process.env.APP_PATH + `/logs/kalman_${detector.name}.csv`, `${newValue}\n`, 'utf-8', () => {
+  //     });
+  //   }
+  // }
+  //
+  // if (detector.round === true) {
+  //   newValue = Math.round(newValue);
+  // }
+  // detector.currentValue = {x: moment().toDate(), y: newValue}; // .startOf('minute')
+  // this.applyRules(detector);
+  //
+  // async.parallel({
+  //     sensorPush(next) {
+  //       if (!self.checkPush(detector)) {
+  //         return next();
+  //       }
+  //       detector.history.push(detector.currentValue);
+  //       if (detector.history.length > HISTORY_LENGTH) {
+  //         detector.history.shift();
+  //       }
+  //       detector.history = orderBy(detector.history, 'x');
+  //       self.broadcastSensorHistory();
+  //       return next();
+  //     },
+  //     sensorWrite(next) {
+  //       if (!self.checkWrite(detector)) {
+  //         return next();
+  //       }
+  //       self.sensorSaveValueToDb(self._id, detector, next);
+  //     },
+  //   },
+  //   callback);
+  // }
   //
   // // --------------------------- Sensor Read --------------------------------------
   // /**
   //  * Filter the sensor's history
   //  */
-  // filterSensorHistory(data: object, callback: Function) {
-  //   // const self = this;
-  //   // data = sortBy(data, 'timestamp').reverse();
-  //   // let lastEntry = moment(data[0].timestamp).add(5, self.timeUnit)
-  //   // ; // add 5 units to the last entry (for processing delay), works seconds & minutes
-  //   // data = data.filter((dataItem, index) => {
-  //   //   if (lastEntry.diff(moment(dataItem.timestamp), self.timeUnit) <= 1) {
-  //   //     return false;
-  //   //   } // if less than 1 time unit diff. reject
-  //   //   lastEntry = moment(dataItem.timestamp);
-  //   //   return true;
-  //   // });
-  //   // data = data.splice(0, HISTORY_LENGTH);
-  //   // data = data.map((dataItem) => ({x: moment(dataItem.timestamp).toDate(), y: dataItem.value}));
-  //   // data.reverse();
-  //   // return callback(null, data);
-  // }
+  filterSensorHistory(data: any) {
+    //sort data descendigly
+    const sortedData = sortBy(data, 'timestamp').reverse();
+    
+    // add 5 units to the latest entry (for processing delay), works seconds & minutes
+    const latestEntry = moment(data[0].timestamp).add(5, this.timeUnit);
+    
+    const filterData = (data, currLatest) =>
+      data.filter(dataItem => {
+        // if less than 1 time unit diff. with latestEntry
+        if (currLatest.diff(moment(dataItem.timestamp), this.timeUnit) <= 1) {
+          return false;
+        }
+        currLatest = moment(dataItem.timestamp);
+        return true;
+      });
+
+    const splice = data => data.splice(0, HISTORY_LENGTH);
+    
+    const setXandY = data =>
+      data.map(dataItem => ({
+        x: moment(dataItem.timestamp).toDate(),
+        y: dataItem.value,
+      }));
+
+    return setXandY(splice(filterData(sortedData, latestEntry)));
+  }
+
   //
   // /**
   //  * Read the sensor's history
   //  */
-  // readSensorHistory(detector: object, callback: Function) {
-  //   // let since;
-  //   // const self = this;
-  //   //
-  //   // if (this.timeUnit === 'seconds') {
-  //   //   since = moment().subtract((HISTORY_LENGTH + 1) * this.sensorReadIntervall, 'seconds').toISOString();
-  //   // } else {
-  //   //   since = moment().subtract((HISTORY_LENGTH + 1), this.timeUnit).toISOString();
-  //   // }
-  //   //
-  //   // const filterReadSensor = {sensor: new ObjectId(this._id), detectorType: detector.type, timestamp: {$gt: since}};
-  //   // SensorDataModel.find(filterReadSensor).exec((err, data) => {
-  //   //   if (err) {
-  //   //     return callback(err);
-  //   //   }
-  //   //   if ((!data) || (data.length === 0)) {
-  //   //     return callback(null, []);
-  //   //   }
-  //   //   self.filterSensorHistory(data, callback);
-  //   // });
-  // }
-  //
-  //
+  async readSensorHistory(detector: IDetector) {
+    let since;
+
+    if (this.timeUnit === 'seconds') {
+      since = moment()
+        .subtract((HISTORY_LENGTH + 1) * this.sensorReadIntervall, 'seconds')
+        .toISOString();
+    } else {
+      since = moment()
+        .subtract(HISTORY_LENGTH + 1, this.timeUnit)
+        .toISOString();
+    }
+
+    const filterReadSensor = {
+      sensor: new Types.ObjectId(this._id),
+      detectorType: detector.type,
+      timestamp: { $gt: since },
+    };
+
+    const data = await this.sensorReadingModel.find(filterReadSensor).lean();
+    return this.filterSensorHistory(data);
+  }
+
   // // --------------------------- Init/apply Rules --------------------------------------
   // /**
   //  * Init sensor rules

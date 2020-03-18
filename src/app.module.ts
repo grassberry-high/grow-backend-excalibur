@@ -9,6 +9,7 @@ import { SensorsModule } from './sensors/sensors.module';
 import { I2cModule } from './i2c/i2c.module';
 import { SystemModule } from './system/system.module';
 import { LoggerModule } from './helpers/logger/logger.module';
+import { DataLoggerModule } from './data-logger/data-logger.module';
 import SensorMock from './sensors/mocks/sensor.mock';
 
 @Module({
@@ -18,7 +19,8 @@ import SensorMock from './sensors/mocks/sensor.mock';
     SensorsModule,
     I2cModule,
     SystemModule,
-    LoggerModule
+    LoggerModule,
+    DataLoggerModule
   ],
   controllers: [AppController],
   providers: [AppService, SensorMock],

@@ -1,6 +1,6 @@
 import 'mongoose';
 import { modelOptions, prop, arrayProp } from '@typegoose/typegoose';
-class Detector {
+export class Detector {
   @prop({ required: true })
   label!: string;
 

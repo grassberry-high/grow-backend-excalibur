@@ -18,11 +18,11 @@ const WATERLEVELS = ['Dry', 'Moist', 'Wet'];
 export class ChirpSensor extends Sensor{
   debugSensorChrip;
 
-  constructor(options) {
-    super(options);
-    this.debugSensorChrip = debug('sensor:Water');
-    this.debugSensorChrip.enabled = true;
-  }
+  // constructor(options) {
+  //   super(options);
+  //   this.debugSensorChrip = debug('sensor:Water');
+  //   this.debugSensorChrip.enabled = true;
+  // }
 
   initChirp(options) {
     this.debugSensorChrip(`Water sensor ${options._id}`);

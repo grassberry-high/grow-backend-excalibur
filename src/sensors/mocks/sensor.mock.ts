@@ -4,19 +4,19 @@ import Sensor from '../sensor';
 /**
  * Mock he basic sensor class.
  */
-export default class SensorMock extends Sensor {
+export default class SensorMock /*extends Sensor*/ {
   /**
    * Constructor function
    * @param {object} options - sensor options
    * @param {*} callback - fn(err)
    */
-  constructor(options) {
-    super(options);
-  }
+  // constructor(options) {
+  //   super(options);
+  // }
 
-  async init(options){
-    await super.init(options);
-  }
+  // async init(options){
+  //   await super.init(options);
+  // }
 
   // --------------------------- Simulation Mode ----------------------------------
   /**
@@ -69,20 +69,20 @@ export default class SensorMock extends Sensor {
    * @param {*} callback
    * @return {*}
    */
-  async seedSensor(detector, times, simulatonStack) {
-    let y;
-    if (detector.history.length >= times) {
-      return;
-    }
-    const scale = 'seconds'; // 'minutes'
-    const time = moment().subtract((times * this.sensorReadIntervall) / 1000, scale).add(times - ((detector.history.length * this.sensorReadIntervall) / 1000), scale).toDate(); // .startOf(scale)
-    if (simulatonStack) {
-      y = simulatonStack[detector.history.length];
-    } else {
-      y = this.randSensorValue(detector);
-    }
-    detector.currentValue = {x: time, y, seed: true};
-    detector.history.unshift(detector.currentValue);
-    await this.seedSensor(detector, times, simulatonStack);
-  }
+  // async seedSensor(detector, times, simulatonStack) {
+  //   let y;
+  //   if (detector.history.length >= times) {
+  //     return;
+  //   }
+  //   const scale = 'seconds'; // 'minutes'
+  //   const time = moment().subtract((times * this.sensorReadIntervall) / 1000, scale).add(times - ((detector.history.length * this.sensorReadIntervall) / 1000), scale).toDate(); // .startOf(scale)
+  //   if (simulatonStack) {
+  //     y = simulatonStack[detector.history.length];
+  //   } else {
+  //     y = this.randSensorValue(detector);
+  //   }
+  //   detector.currentValue = {x: time, y, seed: true};
+  //   detector.history.unshift(detector.currentValue);
+  //   await this.seedSensor(detector, times, simulatonStack);
+  // }
 }
