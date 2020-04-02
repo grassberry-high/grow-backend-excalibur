@@ -11,16 +11,26 @@
 const TxLVL = 0x08 << 3;
 const RxLVL = 0x09 << 3;
 
+export interface MockBus {
+  scan();
+  readByte();
+  writeByte();
+  sendByte();
+  receiveByte();
+  writeI2cBlock();
+  readI2cBlock();
+}
+
 export class I2cServiceMock {
-  open(bus, callback) {
+  open(bus) {
     bus = {
-      scan(callback) {
+      scan() {
         const devices = [64, 77, 32, 33]; // humidty/temp, co2, relay controller
-        return callback(null, devices);
+        return devices;
       },
 
-      readByte(address, command, callback) {
-        let bytes;
+      readByte(address, command) {
+        let bytes = 0;
         if (address === 77) {
           switch (command) {
             case TxLVL:
@@ -29,22 +39,17 @@ export class I2cServiceMock {
             case RxLVL:
               bytes = 9;
               break;
-            default:
-              bytes = 0;
           }
-          return callback(null, bytes);
-        } else {
-          bytes = 0;
-          return callback(null, bytes);
+          return bytes;
         }
       },
 
-      writeByte(address, register, byte, callback) {
-        return callback(null);
+      writeByte(address, register, byte) {
+        return;
       },
 
-      sendByte(address, byte, callback) {
-        return callback(null);
+      sendByte(address, byte) {
+        return;
       },
 
       receiveByte(address, callback) {
@@ -52,17 +57,17 @@ export class I2cServiceMock {
           , 500);
       },
 
-      writeI2cBlock(address, register, blockLength, block, callback) {
+      writeI2cBlock(address, register, blockLength, block) {
         const buffer = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8]);
-        return callback(null, buffer.length, buffer);
+        return  [buffer.length, buffer];
       },
 
-      readI2cBlock(address, register, readLength, readBuffer, callback) {
+      readI2cBlock(address, register, readLength, readBuffer) {
         readBuffer = Buffer.from([0xff, 0x9c, 0x00, 0x00, 0x05, 0x08, 0x00, 0x00, 0x57]);
-        return callback(null);
+        return;
       },
     };
-    setTimeout(callback, 500);
+    setTimeout(() => console.log('hey'), 500);
     return bus;
   };
 

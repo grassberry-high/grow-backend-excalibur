@@ -7,4 +7,12 @@ export class SocketIOMessengerService {
     // TODO
   }
 
+  sendMessage() {
+    return;
+  }
+  
+  initSocketListener(io) {
+    return;
+  }
+
 }

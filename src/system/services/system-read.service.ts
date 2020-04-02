@@ -1,16 +1,16 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { ISystem } from '../interfaces/system.interface';
+import { System } from '../system.model';
 import debug from 'debug';
 const debugSystemRead = debug('system:read');
 
 import * as moment from 'moment';
+import { ReturnModelType } from '@typegoose/typegoose';
 
 @Injectable()
 export class SystemReadService {
-  constructor(@InjectModel('System') private readonly systemModel: Model<ISystem>) {}
-  async get(filter): Promise<ISystem> {
+  constructor(@InjectModel('System') private readonly systemModel: ReturnModelType<typeof System>) {}
+  async get(filter): Promise<System> {
     filter = filter || {};
     const options = {lean: true};
     return this.systemModel.findOne(filter, options).exec();

@@ -12,21 +12,21 @@ export default class ChirpSensorMock extends SensorMock {
   debugSensorChrip;
   detectors;
 
-  constructor(options) {
-    super(options);
-    this.debugSensorChrip = debug('sensor:water');
-    this.debugSensorChrip.enabled = true;
-  }
+  // constructor(options) {
+  //   super(options);
+  //   this.debugSensorChrip = debug('sensor:water');
+  //   this.debugSensorChrip.enabled = true;
+  // }
 
   async initChirp(options) {
-    await super.init(options);
+    // await super.init(options);
     this.debugSensorChrip(`Chirp sensor mock ${options._id}`);
     this.detectors.forEach(async (detector) => {
       detector.min = 1;
       detector.max = 2;
       detector.round = true;
       detector.change = 10;
-      await this.seedSensor(detector, HISTORY_LENGTH, null);
+      // await this.seedSensor(detector, HISTORY_LENGTH, null);
       this.readSensor();
     });
   }
@@ -37,8 +37,8 @@ export default class ChirpSensorMock extends SensorMock {
   async readSensor() {
     const waterLevel = this.randSensorValue(this.detectors[0]);
     this.debugSensorChrip(`WATERLEVEL: ${WATERLEVELS[waterLevel]} ${moment().format('hh:mm:ss DD-MM-YYYY')}`);
-    await this.processSensorValue(this.detectors[0], waterLevel);
-    await setTimeout(() => this.readSensor(), this.sensorReadIntervall);
+    // await this.processSensorValue(this.detectors[0], waterLevel);
+    // await setTimeout(() => this.readSensor(), this.sensorReadIntervall);
     return;
   }
 }

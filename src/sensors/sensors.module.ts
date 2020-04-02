@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, Global } from '@nestjs/common';
 import { ChirpSensorModule } from './chirp-sensor/chirp-sensor.module';
 import { Hdc1000SensorModule } from './hdc-1000-sensor/hdc-1000-sensor.module';
 import { Mhz16SensorModule } from './mhz-16-sensor/mhz-16-sensor.module';
@@ -10,22 +10,25 @@ import {Sensor as SensorModel} from "./sensors.model";
 import { TypegooseModule } from 'nestjs-typegoose';
 import { SensorReading } from 'src/data-logger/sensor-reading';
 
+const models = TypegooseModule.forFeature([{
+  typegooseClass: SensorModel,
+  schemaOptions: {
+    collection: "sensors"
+  }
+},
+{
+  typegooseClass: SensorReading,
+  schemaOptions: {
+    collection: "sensor-readings"
+  }
+}
+]);
+
+@Global()
 @Module({
   imports: [
     ConfigModule,
-    TypegooseModule.forFeature([{
-      typegooseClass: SensorModel,
-      schemaOptions: {
-        collection: "sensors"
-      }
-    },
-    {
-      typegooseClass: SensorReading,
-      schemaOptions: {
-        collection: "sensor-readings"
-      }
-    }
-  ]),
+    models,
     ChirpSensorModule,
     I2cModule,
     Hdc1000SensorModule,
@@ -35,6 +38,6 @@ import { SensorReading } from 'src/data-logger/sensor-reading';
     SensorsService,
     Sensor
   ],
-  exports: [SensorsService, Sensor]
+  exports: [SensorsService, models, ChirpSensorModule, Hdc1000SensorModule, Mhz16SensorModule, Sensor]
 })
 export class SensorsModule {}

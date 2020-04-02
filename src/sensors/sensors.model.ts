@@ -1,4 +1,3 @@
-import 'mongoose';
 import { modelOptions, prop, arrayProp } from '@typegoose/typegoose';
 export class Detector {
   @prop({ required: true })

@@ -27,8 +27,6 @@ export class SensorsService {
     // TODO: debug does not work currently
     this.debugSensorBoot = debug('sensor:boot');
     this.debugSensorBootVerbose = debug('sensor:boot:verbose');
-    this.debugSensorBoot.enabled = true;
-    this.debugSensorBootVerbose.enabled = true;
   }
 
   private _registeredSensors: Sensor[] = [];
@@ -122,6 +120,7 @@ export class SensorsService {
   //   this.registeredSensors.forEach((sensor) => sensor.broadcastSensorHistory());
   // }
 
+  
   // async updateSensorTimeUnit(sensorId, newTimeUnit, options, callback) {
   //   const errors = [];
   //   if (sensorId === null) {

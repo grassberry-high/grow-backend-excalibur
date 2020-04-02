@@ -8,14 +8,6 @@ export enum Unit {
   SECONDS= 'seconds'
 }
 
-class TimeStamp {
-  @prop({required: true})
-  amount!: number;
-
-  @prop({required: true, enum: Unit})
-  unit!: Unit
-}
-
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class SensorReading {
   @prop({ ref: Sensor, required: true})
@@ -31,5 +23,5 @@ export class SensorReading {
   detectorType!: string;
 
   @prop({required: true})
-  timestamp!: TimeStamp;
+  timestamp!: Date;
 }

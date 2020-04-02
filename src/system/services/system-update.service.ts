@@ -34,16 +34,15 @@ import * as moment from 'moment';
 
 import {ShellService} from '../shell/shell.service.js';
 
-import {getEndpoints} from '../api/api-endpoints.js';
-import { ISystem } from '../interfaces/system.interface';
+import { System } from '../system.model';
 import { ApiService } from '../api/api.service';
-const apiEndpoints = getEndpoints();
+import { ReturnModelType } from '@typegoose/typegoose';
 
 @Injectable()
 export class SystemUpdateService {
 
   constructor(
-    @InjectModel('System') private readonly systemModel: Model<ISystem>,
+    @InjectModel('System') private readonly systemModel: ReturnModelType<typeof System>,
     private apiService: ApiService,
     private shellService: ShellService
   ) {}
