@@ -1,32 +1,46 @@
-import { Inject, Injectable } from '@nestjs/common';
-import { Sensor } from './sensors.model';
+import { Injectable } from '@nestjs/common';
+import { Sensor as SensorModel } from './sensors.model';
+import Sensor from "../sensors/sensor";
 import { ReturnModelType } from '@typegoose/typegoose';
 import { InjectModel } from 'nestjs-typegoose';
 
 import debug from 'debug';
 
-import { ISensor } from './interfaces/sensor.interface';
 import { I2cService } from '../i2c/i2c.service';
 import { Mhz16Sensor } from './mhz-16-sensor/mhz-16-sensor';
 import { Hdc1000Sensor } from './hdc-1000-sensor/hdc-1000-sensor';
 import { ChirpSensor } from './chirp-sensor/chirp-sensor';
-import { Query } from 'mongoose';
+import ChirpSensorMock from './chirp-sensor/mocks/chirp-sensor.mock';
+import Hdc1000SensorMock from './hdc-1000-sensor/mocks/hdc-1000-sensor.mock';
+import Mhz16SensorMock from './mhz-16-sensor/mocks/mhz-16-sensor.mock';
 
 @Injectable()
 export class SensorsService {
   debugSensorBoot: debug.Debugger;
   debugSensorBootVerbose: debug.Debugger;
+  chirpSensorClass;
+  mhz16SensorClass;
+  hdc1000SensorClass;
 
   constructor(
-    @InjectModel(Sensor) private readonly sensorModel: ReturnModelType<typeof Sensor>,
+    @InjectModel(SensorModel) private readonly sensorModel: ReturnModelType<typeof SensorModel>,
     private i2cService: I2cService,
-    @Inject('ChirpSensor') private chirpSensorClass: any,
-    @Inject('Mhz16Sensor') private mhz16SensorClass: any,
-    @Inject('Hdc1000Sensor') private hdc1000SensorClass: any
+    private readonly chirpSensor: ChirpSensor,
+    private readonly mhz16Sensor: Mhz16Sensor,
+    private readonly hdc1000Sensor: Hdc1000Sensor
   ) {
     // TODO: debug does not work currently
     this.debugSensorBoot = debug('sensor:boot');
     this.debugSensorBootVerbose = debug('sensor:boot:verbose');
+    if (process.env.SIMULATION === 'true') {
+      this.chirpSensorClass = new ChirpSensorMock();
+      this.mhz16SensorClass = new Mhz16SensorMock();
+      this.hdc1000SensorClass = new Hdc1000SensorMock();
+    } else {
+      this.chirpSensorClass = chirpSensor;
+      this.mhz16SensorClass = mhz16Sensor;
+      this.hdc1000SensorClass = hdc1000Sensor;
+    }
   }
 
   private _registeredSensors: Sensor[] = [];
@@ -47,7 +61,7 @@ export class SensorsService {
 
   async bootSensors(options) {
     const filterRead = options.filterRead || {};
-    const sensorsFound: Sensor[] = await this.sensorModel.find(filterRead).lean();
+    const sensorsFound: SensorModel[] = await this.sensorModel.find(filterRead).lean();
     if (options.additive !== true) {
       this._registeredSensors = [];
     }
@@ -70,24 +84,31 @@ export class SensorsService {
     });
   }
 
-  async bootI2CSensor(sensor: Sensor) {
+  async bootI2CSensor(sensor: SensorModel) {
     this.debugSensorBootVerbose('i2c sensor:', sensor);
+    const sensorArg = 
+    {
+      _id: sensor._id.toHexString(),
+      model: sensor.model,
+      technology: sensor.technology,
+      address: sensor.address
+    }
+
+    const detectorNames = sensor.detectors.map(d => d.name)
+
     switch (sensor.model) {
       case 'chirp':
         console.log("NEW CHIRPS");
-        const chirpSensor = new this.chirpSensorClass(sensor);
-        await chirpSensor.initChirp(sensor);
-        this.addSensor(chirpSensor);
+        this.chirpSensorClass.initChirp(sensorArg, detectorNames)
+        this.addSensor(this.chirpSensorClass);
         break;
       case 'hdc1000':
-        const hdc1000Sensor = new this.hdc1000SensorClass(sensor);
-        await hdc1000Sensor.initHdc1000(sensor);
-        this.addSensor(hdc1000Sensor);
+        await this.hdc1000SensorClass.init(sensorArg, detectorNames);
+        this.addSensor(this.hdc1000SensorClass);
         break;
       case 'mhz16':
-        const mhz16Sensor = new this.mhz16SensorClass(sensor);
-        await mhz16Sensor.initMhz16(sensor);
-        this.addSensor(mhz16Sensor);
+        this.mhz16SensorClass.initMhz16(sensorArg, detectorNames);
+        this.addSensor(this.mhz16SensorClass);
         break;
       default:
         this.debugSensorBoot('Sensor model:', sensor.model, 'is not handled.');

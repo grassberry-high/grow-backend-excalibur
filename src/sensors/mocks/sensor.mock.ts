@@ -1,10 +1,11 @@
 import * as moment from 'moment';
 import Sensor from '../sensor';
+import { IDetector } from '../interfaces/detector.interface';
 
 /**
  * Mock he basic sensor class.
  */
-export default class SensorMock /*extends Sensor*/ {
+export default class SensorMock extends Sensor {
   /**
    * Constructor function
    * @param {object} options - sensor options
@@ -14,37 +15,30 @@ export default class SensorMock /*extends Sensor*/ {
   //   super(options);
   // }
 
-  // async init(options){
-  //   await super.init(options);
-  // }
+  async init(sensor: Partial<Sensor>, detectors: string[]){
+    await super.init(sensor, detectors);
+  }
 
   // --------------------------- Simulation Mode ----------------------------------
   /**
    * Read the history of a sensor's detector
-   * @param {object} detector
-   * @param {*} callback
-   * @return {*}
    */
-  readSensorHistory(detector, callback) {
-    return callback();
+  readSensorHistory(detector: IDetector): Promise<any> {
+    return Promise.resolve(() => console.log("mock"));
+    // return callback();
   }
 
   /**
    * Return a rand int between min & max
-   * @param {number} min
-   * @param {number} max
-   * @return {number}
    */
-  randomNumber(min, max) {
+  randomNumber(min:number, max:number): number {
     return Math.floor((Math.random() * max) + min);
   }
 
   /**
    * Returns a random sensor value
-   * @param {object} detector
-   * @return {*}
    */
-   randSensorValue(detector) {
+   randSensorValue(detector: IDetector): number {
     if ((this.randomNumber(0, 100) < 95) && (detector.history.length > 0)) {
       return detector.history[detector.history.length - 1];
     }
@@ -69,20 +63,20 @@ export default class SensorMock /*extends Sensor*/ {
    * @param {*} callback
    * @return {*}
    */
-  // async seedSensor(detector, times, simulatonStack) {
-  //   let y;
-  //   if (detector.history.length >= times) {
-  //     return;
-  //   }
-  //   const scale = 'seconds'; // 'minutes'
-  //   const time = moment().subtract((times * this.sensorReadIntervall) / 1000, scale).add(times - ((detector.history.length * this.sensorReadIntervall) / 1000), scale).toDate(); // .startOf(scale)
-  //   if (simulatonStack) {
-  //     y = simulatonStack[detector.history.length];
-  //   } else {
-  //     y = this.randSensorValue(detector);
-  //   }
-  //   detector.currentValue = {x: time, y, seed: true};
-  //   detector.history.unshift(detector.currentValue);
-  //   await this.seedSensor(detector, times, simulatonStack);
-  // }
+  async seedSensor(detector, times, simulatonStack) {
+    let y;
+    if (detector.history.length >= times) {
+      return;
+    }
+    const scale = 'seconds'; // 'minutes'
+    const time = moment().subtract((times * this.sensorReadIntervall) / 1000, scale).add(times - ((detector.history.length * this.sensorReadIntervall) / 1000), scale).toDate(); // .startOf(scale)
+    if (simulatonStack) {
+      y = simulatonStack[detector.history.length];
+    } else {
+      y = this.randSensorValue(detector);
+    }
+    detector.currentValue = {x: time, y, seed: true};
+    detector.history.unshift(detector.currentValue);
+    setTimeout(() => this.seedSensor(detector, times, simulatonStack),0);
+  }
 }

@@ -110,6 +110,11 @@ export class LoggerService {
     // }));
   };
 
+  error(...err) {
+    console.error(err);
+    ;
+  }
+
   // /**
   //  * Get a fake logger (to console vs to DB)
   //  * @return {object} fakeLogger

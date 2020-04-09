@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { InjectModel } from 'nestjs-typegoose';
 import { System } from '../system.model';
 import debug from 'debug';
 const debugSystemRead = debug('system:read');
@@ -9,7 +9,9 @@ import { ReturnModelType } from '@typegoose/typegoose';
 
 @Injectable()
 export class SystemReadService {
-  constructor(@InjectModel('System') private readonly systemModel: ReturnModelType<typeof System>) {}
+  val = 4;
+  constructor(@InjectModel(System) private readonly systemModel: ReturnModelType<typeof System>) {}
+  
   async get(filter): Promise<System> {
     filter = filter || {};
     const options = {lean: true};

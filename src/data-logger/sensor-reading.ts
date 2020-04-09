@@ -13,9 +13,6 @@ export class SensorReading {
   @prop({ ref: Sensor, required: true})
   sensor!: Ref<Sensor>;
 
-  @prop({ required: true })
-  name!: string;
-
   @prop({required: true})
   value!: number;
 

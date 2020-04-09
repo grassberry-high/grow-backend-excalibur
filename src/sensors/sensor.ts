@@ -8,7 +8,7 @@ const ONE_HOUR_IN_MILLISECONDS = 60 * ONE_MINUTE_IN_MILLISECONDS;
 const STATISTIC_INTERVALL = HISTORY_LENGTH * 60 * 1000; // max time unit is hours
 
 import debug from 'debug';
-import { Sensor as SensorModel, Tech } from './sensors.model';
+import { Sensor as SensorModel, Tech, Detector } from './sensors.model';
 
 const debugSensorFilter = debug('sensor:filter');
 const debugSensorBroadcast = debug('sensor:broadcast');
@@ -28,6 +28,9 @@ import { I2cService } from '../i2c/i2c.service';
 import { ReturnModelType } from '@typegoose/typegoose';
 import { SensorReading, Unit } from '../data-logger/sensor-reading';
 import { promisify } from 'util';
+import {PromisifiedBus } from 'i2c-bus';
+import { Inject } from '@nestjs/common';
+import { LoggerService } from 'src/helpers/logger/logger.service';
 
 /**
  * Basic sensor class
@@ -37,7 +40,7 @@ export default class Sensor {
   model: string;
   detectors: IDetector[];
   technology: Tech;
-  i2c1: object;
+  i2c1: PromisifiedBus;
   kalmanFilter: KalmanFilter;
   address: number;
   sensorReadIntervall: number;
@@ -46,49 +49,53 @@ export default class Sensor {
   timeUnit: Unit;
   modes: any;
 
-  constructor(
-    private readonly i2cService: I2cService,
+    @Inject()
+    private readonly i2cService: I2cService;
+
     @InjectModel(SensorModel)
-    private readonly sensorModel: ReturnModelType<typeof SensorModel>,
+    private readonly sensorModel: ReturnModelType<typeof SensorModel>;
+
     @InjectModel(SensorReading)
-    private readonly sensorReadingModel: ReturnModelType<typeof SensorReading>,
-  ) {
-    return;
-  }
+    private readonly sensorReadingModel: ReturnModelType<typeof SensorReading>;
+
+    @Inject()
+    loggerService: LoggerService;
 
   async init(
-    id: string,
-    model: string,
-    technology: Tech,
-    detectors: IDetector[],
-    modes: any,
-    timeUnit?: Unit,
+    sensor: Partial<Sensor>,
+    detectors: string[]
   ) {
-    this._id = id;
-    this.model = model;
-    this.detectors = detectors;
+    this._id = sensor._id;
+    this.model = sensor.model;
 
-    this.technology = technology;
+    this.technology = sensor.technology;
 
     if (this.technology === 'i2c') this.i2c1 = this.i2cService.getI2cBus();
 
     this.sensorReadIntervall = 1000; // read sensor each s
     this.sensorPushIntervall = 5000; // push sensor each 5s
     this.sensorWriteIntervall = 5000; // write sensor each 5s
-    this.timeUnit = timeUnit || Unit['seconds'];
-    debugSensorFilter(modes);
-    this.modes = modes || { adjustValues: 5 };
+    this.timeUnit = sensor.timeUnit || Unit['seconds'];
+    debugSensorFilter(sensor.modes);
+    this.modes = sensor.modes || { adjustValues: 5 };
 
     if (this.modes.kalman != null) {
       this.kalmanFilter = new KalmanFilter(this.modes.kalman); // R internal variation, Q expected variation through noise
     }
 
-    this.detectors.forEach(async detector => {
-      detector.history = [];
-      detector.shortBuffer = [];
-      detector.currentValue = null;
+    this.detectors = [];
+
+    detectors.forEach(async detectorName => {
+      const detector: IDetector = {
+        name: detectorName,
+        history : [],
+        shortBuffer : [],
+        currentValue : null
+      }
+
       const history = await this.readSensorHistory(detector);
       detector.history = history || [];
+      this.detectors.push(detector);
     });
     // this.buildStatistic();
     return;
@@ -101,10 +108,12 @@ export default class Sensor {
   buildStatistic() {
     // builds a statistic and removes values older than 48h
     setTimeout(() => {
-      this.detectors.map(detector =>
+      this.detectors.map(async (detector) => {
         // todo first build a statistic
-        this.sensorReadingModel
-          .remove({
+        try {
+          
+          await this.sensorReadingModel
+          .deleteMany({
             sensor: this._id,
             detectorType: detector.type,
             timestamp: {
@@ -113,14 +122,13 @@ export default class Sensor {
                 .toDate(),
             },
           })
-          .exec(err => {
-            if (err) {
-              // return logger.error;
-            }
-          }),
-      );
-    }, STATISTIC_INTERVALL);
+        } catch (error) {
+          this.loggerService.error(error);
+        }
+    })
+  },  STATISTIC_INTERVALL);
   }
+  
 
   // --------------------------- Sensor Process, Write & Broadcast --------------------------------------
   /**
@@ -281,6 +289,8 @@ export default class Sensor {
    * Filter the sensor's history
    */
   filterSensorHistory(data: any) {
+    if (data.length == 0)
+      return;
     //sort data descendigly
     const sortedData = sortBy(data, 'timestamp').reverse();
 

@@ -15,7 +15,7 @@ import * as os from 'os';
 let i2c : I2cServiceMock;
 let i2cBus;
 let i2CMod;
-import {I2cServiceMock, MockBus} from './mocks/i2c.mock';
+import {I2cServiceMock} from './mocks/i2c.mock';
 
 if (process.env.USE_I2C_MOCK === 'true') {
   console.log("ismock"); 

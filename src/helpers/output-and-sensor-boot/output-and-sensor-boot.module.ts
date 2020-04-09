@@ -7,8 +7,7 @@ import { I2cService } from 'src/i2c/i2c.service';
 import { SensorsModule } from 'src/sensors/sensors.module';
 
 @Module({
-  imports: [I2cModule,
-    SensorsModule],
-  providers: [OutputAndSensorBootService, SensorsService, I2cService]
+  providers: [OutputAndSensorBootService, SensorsService, I2cService],
+  exports: [OutputAndSensorBootService]
 })
 export class OutputAndSensorBootModule {}

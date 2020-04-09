@@ -13,36 +13,37 @@ import { DataLoggerModule } from './data-logger/data-logger.module';
 import SensorMock from './sensors/mocks/sensor.mock';
 import debug from "debug";
 import * as moment from "moment";
-import socket from "socket.io";
-import { SocketIOMessengerService } from './helpers/socket-io-messenger/socket-io-messenger.service';
 import { I2cService } from './i2c/i2c.service';
 import { OutputAndSensorBootService } from './helpers/output-and-sensor-boot/output-and-sensor-boot.service';
 import { OutputAndSensorBootModule } from './helpers/output-and-sensor-boot/output-and-sensor-boot.module';
-import { SocketIOMessengerModule } from './helpers/socket-io-messenger/socket-io-messenger.module';
 import { HelpersModule } from './helpers/helpers.module';
+import { SensorsService } from './sensors/sensors.service';
+import { SystemReadService } from './system/services/system-read.service';
+import { RelayModule } from './relay/relay.module';
 // import {getLicenseInformation, bootLicenseCronjob} from ('./system/system.update');
 const debugBoot = debug('boot');
 
 @Module({
   imports: [
     ChambersModule,
-    TypegooseModule.forRoot('mongodb://localhost/LOC_gh',  { useNewUrlParser: true, useCreateIndex: true }),
+    TypegooseModule.forRoot('mongodb://localhost/LOC_gh',  { useNewUrlParser: true, useCreateIndex: true, useUnifiedTopology: true}),
     SensorsModule,
     HelpersModule,
-    SocketIOMessengerService,
-    OutputAndSensorBootService,
+    SensorsModule,
+    OutputAndSensorBootModule,
     I2cModule,
     SystemModule,
     LoggerModule,
     DataLoggerModule,
+    RelayModule
   ],
   controllers: [AppController],
-  providers: [AppService, SensorMock, SocketIOMessengerService, OutputAndSensorBootService]
+  providers: [AppService, SensorMock, SensorsService, SystemReadService, OutputAndSensorBootService]
 })
 export class AppModule {
 
   constructor(
-    private readonly socketio: SocketIOMessengerService,
+    // private readonly socketio: SocketIOMessengerService,
     private readonly i2cService: I2cService,
     private readonly outputAndSensorBootService: OutputAndSensorBootService
   ){}
@@ -65,8 +66,7 @@ export class AppModule {
     //     console.error(err);
     //   }
     //   return next();
-    // });
-  
+    // });  
     debugBoot('-->I2C<--');
     await this.i2cService.bootI2C();
     debugBoot('-->Sensors & Relays<--');

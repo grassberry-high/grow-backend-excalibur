@@ -1,9 +1,13 @@
   export interface IDetector {
-  name?: string;
-  lastWrite: Date;
+  name: string;
+  lastWrite?: Date;
   history: any[];
-  type: string;
+  type?: string;
   shortBuffer: any[];
   currentValue: any;
-  lastPush: Date;
+  lastPush?: Date;
+  min?: number;
+  max?: number;
+  round?: boolean;
+  change?: number;
 }

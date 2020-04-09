@@ -9,10 +9,11 @@ import { HelpersModule } from '../helpers/helpers.module';
 import { TypegooseModule } from 'nestjs-typegoose';
 import { System } from './system.model';
 
+const model = TypegooseModule.forFeature([System])
 @Module({
-  imports: [TypegooseModule.forFeature([System]), ApiModule, HelpersModule],
+  imports: [ApiModule, HelpersModule, model],
   providers: [SystemUpdateService, SystemReadService, SystemSupportService, ShellService],
   controllers: [SystemController],
-  exports: [SystemReadService]
+  exports: [SystemReadService, model]
 })
 export class SystemModule {}

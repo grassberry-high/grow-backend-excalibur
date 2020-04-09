@@ -37,8 +37,8 @@ export default class ChirpSensorMock extends SensorMock {
   async readSensor() {
     const waterLevel = this.randSensorValue(this.detectors[0]);
     this.debugSensorChrip(`WATERLEVEL: ${WATERLEVELS[waterLevel]} ${moment().format('hh:mm:ss DD-MM-YYYY')}`);
-    // await this.processSensorValue(this.detectors[0], waterLevel);
-    // await setTimeout(() => this.readSensor(), this.sensorReadIntervall);
+    await this.processSensorValue(this.detectors[0], waterLevel);
+    await setTimeout(this.readSensor, this.sensorReadIntervall);
     return;
   }
 }

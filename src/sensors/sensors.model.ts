@@ -1,4 +1,5 @@
 import { modelOptions, prop, arrayProp } from '@typegoose/typegoose';
+import { Types } from 'mongoose';
 export class Detector {
   @prop({ required: true })
   label!: string;
@@ -17,6 +18,10 @@ export enum Tech {
 
 @modelOptions({ schemaOptions: { timestamps: true } })
 export class Sensor {
+
+  @prop({required: true})
+  _id!: Types.ObjectId
+
   @prop({ required: true, enum: Tech, lowercase: true })
   technology!: Tech; // I2C or BLE
 
